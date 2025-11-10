@@ -1,4 +1,4 @@
-import { createRestAPIClient } from "masto";
+import { getMastoClient } from "@/utils/masto";
 import { AccountCredentials } from "masto/mastodon/entities/v1/account.js";
 import { useEffect, useState } from "react";
 import { useUserSession } from "./use-user-session.hook";
@@ -13,11 +13,7 @@ export const useUserProfileInfo = () => {
 
         const fetchProfile = async () => {
             try {
-                const masto = createRestAPIClient({
-                    url: process.env.MASTO_INSTANCE!,
-                    accessToken: token,
-                });
-
+                const masto = getMastoClient(token);
                 const me = await masto.v1.accounts.verifyCredentials();
 
                 setProfile(me);
