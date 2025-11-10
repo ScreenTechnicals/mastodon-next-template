@@ -34,7 +34,7 @@ export async function GET(req: Request) {
 
         const redirectUrl = new URL(
             `/profile?token=${tokenData.access_token}&username=${me.username}`,
-            process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+            process.env.NEXTAUTH_URL! || 'http://localhost:3000'
         );
 
         return NextResponse.redirect(redirectUrl);
