@@ -1,5 +1,5 @@
 import { envs } from "@/common/const/env.const";
-import { createRestAPIClient } from "masto";
+import { createRestAPIClient, createStreamingAPIClient } from "masto";
 
 export const mastoClient = createRestAPIClient({
     url: envs.instance,
@@ -10,3 +10,6 @@ export const getMastoClient = (token: string | undefined) => createRestAPIClient
     url: envs.instance,
     accessToken: token,
 });
+
+
+export const getStreamingMastoClient = (token: string | undefined) => createStreamingAPIClient({ accessToken: token, streamingApiUrl: "wss://mastodon.social/api/v1/streaming" });
