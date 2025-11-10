@@ -1,20 +1,18 @@
-import { getMastoClient } from "@/utils/masto";
 import { AccountCredentials } from "masto/mastodon/entities/v1/account.js";
 import { useEffect, useState } from "react";
-import { useUserSession } from "./use-user-session.hook";
+import { useMastoClient } from "./use-masto-client.hook";
 
 export const useUserProfileInfo = () => {
-    const { token, } = useUserSession()
+    const mastoClient = useMastoClient()
     const [profile, setProfile] = useState<AccountCredentials | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!token) return;
+        if (!mastoClient) return;
 
         const fetchProfile = async () => {
             try {
-                const masto = getMastoClient(token);
-                const me = await masto.v1.accounts.verifyCredentials();
+                const me = await mastoClient.v1.accounts.verifyCredentials();
 
                 setProfile(me);
             } catch (err) {
@@ -25,7 +23,7 @@ export const useUserProfileInfo = () => {
         };
 
         fetchProfile();
-    }, [token]);
+    }, [mastoClient]);
 
     return {
         ...profile,

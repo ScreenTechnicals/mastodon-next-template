@@ -1,4 +1,5 @@
-import { createRestAPIClient } from 'masto';
+import { envs } from '@/common/const/env.const';
+import { getMastoClient } from '@/utils/masto';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
@@ -7,19 +8,15 @@ export async function GET(req: Request) {
         const code = url.searchParams.get('code');
         if (!code) return NextResponse.json({ error: 'Missing code' }, { status: 400 });
 
-        const instance = process.env.MASTO_INSTANCE!;
-        const clientId = process.env.MASTO_CLIENT_ID!;
-        const clientSecret = process.env.MASTO_CLIENT_SECRET!;
-        const redirectUri = process.env.MASTO_REDIRECT_URI!;
 
-        const tokenRes = await fetch(`${instance}/oauth/token`, {
+        const tokenRes = await fetch(`${envs.instance}/oauth/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                client_id: clientId,
-                client_secret: clientSecret,
+                client_id: envs.clientId,
+                client_secret: envs.clientSecret,
                 grant_type: 'authorization_code',
-                redirect_uri: redirectUri,
+                redirect_uri: envs.redirectUri,
                 code,
             }),
         });
@@ -32,7 +29,7 @@ export async function GET(req: Request) {
         }
 
         const tokenData = JSON.parse(debug);
-        const masto = createRestAPIClient({ url: instance, accessToken: tokenData.access_token });
+        const masto = getMastoClient(tokenData.access_token);
         const me = await masto.v1.accounts.verifyCredentials();
 
         const redirectUrl = new URL(

@@ -1,11 +1,12 @@
+import { envs } from "@/common/const/env.const";
 import { createRestAPIClient } from "masto";
 
 export const mastoClient = createRestAPIClient({
-    url: process.env.MASTO_INSTANCE!,
-    accessToken: process.env.MASTO_ACCESS_TOKEN,
+    url: envs.instance,
+    accessToken: envs.accessToken,
 });
 
 export const getMastoClient = (token: string | undefined) => createRestAPIClient({
-    url: process.env.MASTO_INSTANCE!,
+    url: envs.instance,
     accessToken: token,
 });
