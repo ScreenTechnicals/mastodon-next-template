@@ -1,33 +1,20 @@
-import { AccountCredentials } from "masto/mastodon/entities/v1/account.js";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { mastodon } from "masto";
 import { useMastoClient } from "./use-masto-client.hook";
 
 export const useUserProfileInfo = () => {
-    const mastoClient = useMastoClient()
-    const [profile, setProfile] = useState<AccountCredentials | null>(null);
-    const [loading, setLoading] = useState(true);
+    const mastoClient = useMastoClient();
 
-    useEffect(() => {
-
-        if (!mastoClient || profile) return;
-
-        const fetchProfile = async () => {
-            try {
-                const me = await mastoClient.v1.accounts.verifyCredentials();
-
-                setProfile(me);
-            } catch (err) {
-                console.error('Failed to fetch profile:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProfile();
-    }, [mastoClient, profile]);
-
-    return {
-        ...profile,
-        isLoading: loading
-    }
-}
+    return useQuery<mastodon.v1.AccountCredentials>({
+        queryKey: ["user-profile"],
+        queryFn: async () => {
+            if (!mastoClient) throw new Error("Masto client not initialized");
+            return mastoClient.v1.accounts.verifyCredentials();
+        },
+        enabled: !!mastoClient,
+        staleTime: 1000 * 60 * 5, // ✅ cache profile for 5 minutes
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        retry: 2,
+    });
+};
