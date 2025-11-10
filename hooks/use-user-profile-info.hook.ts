@@ -8,7 +8,8 @@ export const useUserProfileInfo = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!mastoClient) return;
+
+        if (!mastoClient || profile) return;
 
         const fetchProfile = async () => {
             try {
@@ -23,7 +24,7 @@ export const useUserProfileInfo = () => {
         };
 
         fetchProfile();
-    }, [mastoClient]);
+    }, [mastoClient, profile]);
 
     return {
         ...profile,
