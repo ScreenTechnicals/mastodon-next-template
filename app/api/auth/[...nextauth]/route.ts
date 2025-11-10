@@ -61,6 +61,9 @@ const handler = NextAuth({
     providers: [
         MastodonProvider(process.env.MASTO_INSTANCE!) as Provider, // e.g. https://mastodon.social
     ],
+    session: {
+        strategy: "jwt", // ✅ explicitly set
+    },
     callbacks: {
         async jwt({ token, account, profile }) {
             if (account) {
