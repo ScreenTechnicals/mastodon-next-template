@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import type React from "react"
@@ -231,8 +232,8 @@ export default function HookLab() {
                                                     key={hook.key}
                                                     onClick={() => setSelectedHook(hook.key as HookKey)}
                                                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${selectedHook === hook.key
-                                                            ? "bg-gradient-to-r from-blue-600/30 to-cyan-500/20 border border-blue-600/50 text-blue-300 font-medium shadow-lg"
-                                                            : "hover:bg-blue-600/5 text-muted-foreground border border-transparent hover:border-blue-600/20"
+                                                        ? "bg-gradient-to-r from-blue-600/30 to-cyan-500/20 border border-blue-600/50 text-blue-300 font-medium shadow-lg"
+                                                        : "hover:bg-blue-600/5 text-muted-foreground border border-transparent hover:border-blue-600/20"
                                                         }`}
                                                 >
                                                     <div className="flex items-center justify-between">
