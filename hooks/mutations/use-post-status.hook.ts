@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { StatusVisibility } from "masto/mastodon/entities/v1/status.js";
 import { useMastoClient } from "../use-masto-client.hook";
 
 type PostStatusParams = {
@@ -8,7 +9,7 @@ type PostStatusParams = {
     spoilerText?: string;
 };
 
-export function usePostStatus() {
+export function usePostStatus(visibility: StatusVisibility = "public") {
     const mastoClient = useMastoClient();
     const queryClient = useQueryClient();
 
@@ -61,6 +62,7 @@ export function usePostStatus() {
                 mediaIds: mediaIds.length ? mediaIds : undefined,
                 sensitive: sensitive ?? false,
                 spoilerText: spoilerText ?? undefined,
+                visibility,
             });
 
             return newStatus;
