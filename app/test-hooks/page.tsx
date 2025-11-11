@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-
 import { useBookmarkStatus } from "@/hooks/mutations/use-bookmark-status.hook"
 import { useFavouriteStatus } from "@/hooks/mutations/use-favourite-status.hook"
 import { useAddMutedWord } from "@/hooks/mutations/use-mute-actions.hook"
@@ -31,6 +30,7 @@ import {
 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 type HookKey =
     | "useUserProfileInfo"
@@ -148,22 +148,36 @@ export default function HookLab() {
 
     const recentPosts = homeFeed?.slice(0, 10) || []
 
-    const run = async (fn: () => Promise<any>) => {
+    const run = async (fn: () => Promise<any>, successMsg: string, loadingMsg?: string) => {
+        const id = toast.loading(loadingMsg || "Processing...")
         try {
             const res = await fn()
             setLastOutput({ success: true, data: res, timestamp: new Date().toISOString() })
+            toast.success(successMsg, { id })
         } catch (e: any) {
             setLastOutput({ success: false, error: e.message || String(e), timestamp: new Date().toISOString() })
+            toast.error(e.message || "Failed", { id })
         }
     }
 
     const triggerQuery = async (name: string, refetchFn: () => Promise<any>) => {
+        const id = toast.loading(`Fetching ${name}...`)
         try {
             const { data } = await refetchFn()
             setLastOutput({ success: true, query: name, data, timestamp: new Date().toISOString() })
+            toast.success(`${name} loaded!`, { id })
         } catch (e: any) {
             setLastOutput({ success: false, error: e.message, timestamp: new Date().toISOString() })
+            toast.error("Failed to load", { id })
         }
+    }
+
+    const copyText = (text: string, label: string = "Text") => {
+        navigator.clipboard.writeText(text)
+        toast.success(`${label} copied!`, {
+            description: text.length > 40 ? text.slice(0, 37) + "..." : text,
+            icon: <Copy className="w-4 h-4" />
+        })
     }
 
     const selectedHookData = hookCategories.flatMap(c => c.hooks).find(h => h.key === selectedHook)
@@ -211,7 +225,10 @@ export default function HookLab() {
                                             {cat.hooks.map((hook) => (
                                                 <button
                                                     key={hook.key}
-                                                    onClick={() => setSelectedHook(hook.key as HookKey)}
+                                                    onClick={() => {
+                                                        setSelectedHook(hook.key as HookKey)
+                                                        toast.info(`Switched to ${hook.label}`)
+                                                    }}
                                                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${selectedHook === hook.key
                                                         ? "bg-gradient-to-r from-blue-600/30 to-cyan-500/20 border border-blue-600/50 text-blue-300 font-medium shadow-lg"
                                                         : "hover:bg-blue-600/5 text-muted-foreground border border-transparent hover:border-blue-600/20"
@@ -259,7 +276,10 @@ export default function HookLab() {
                                                 </div>
                                                 <p className="text-foreground mt-4 text-lg">{selectedHookData?.desc}</p>
                                             </div>
-                                            <button className="p-3 bg-gradient-to-br from-blue-600/20 to-cyan-500/10 rounded-xl hover:bg-blue-600/30 transition border border-blue-600/30">
+                                            <button
+                                                onClick={() => copyText(selectedHook || "", "Hook name")}
+                                                className="p-3 bg-gradient-to-br from-blue-600/20 to-cyan-500/10 rounded-xl hover:bg-blue-600/30 transition border border-blue-600/30"
+                                            >
                                                 <Copy className="w-5 h-5" />
                                             </button>
                                         </div>
@@ -276,6 +296,9 @@ export default function HookLab() {
                                                 <div>
                                                     <p className="text-2xl font-bold">{user.displayName}</p>
                                                     <p className="text-muted-foreground">@{user.acct}</p>
+                                                    <button onClick={() => copyText(user.acct, "Username")} className="text-xs opacity-70 hover:opacity-100 mt-2 inline-flex items-center gap-1">
+                                                        <Copy className="w-3.5 h-3.5" /> Copy @
+                                                    </button>
                                                     <div className="flex gap-6 mt-4 text-sm">
                                                         <div><strong>{user.statusesCount}</strong> posts</div>
                                                         <div><strong>{user.followersCount}</strong> followers</div>
@@ -299,7 +322,7 @@ export default function HookLab() {
                                                             <p className="font-medium">{acc.displayName}</p>
                                                             <p className="text-sm text-muted-foreground">@{acc.acct}</p>
                                                         </div>
-                                                        <button onClick={() => navigator.clipboard.writeText(acc.acct)} className="text-xs opacity-70 hover:opacity-100">
+                                                        <button onClick={() => copyText(acc.acct, "Username")} className="text-xs opacity-70 hover:opacity-100">
                                                             <Copy className="w-4 h-4" />
                                                         </button>
                                                     </div>
@@ -316,7 +339,7 @@ export default function HookLab() {
                                             <div className="space-y-3 max-h-96 overflow-y-auto">
                                                 {userFollowers?.slice(0, 15).map((acc: any) => (
                                                     <div key={acc.id} className="flex items-center gap-4 p-4 bg-input/50 rounded-xl border border-blue-600/20">
-                                                        <img src={acc.avatar} alt="" className="w-12 h-12 rounded-full" />
+                                                        <img src={acc.avatar} alt="" className="w-12-12 h-12 rounded-full" />
                                                         <div>
                                                             <p className="font-medium">{acc.displayName}</p>
                                                             <p className="text-sm text-muted-foreground">@{acc.acct}</p>
@@ -441,7 +464,7 @@ export default function HookLab() {
                                             <div className="flex gap-3 mt-4">
                                                 {selectedHook === "usePostStatus" && (
                                                     <button
-                                                        onClick={() => run(() => postStatus({ status }))}
+                                                        onClick={() => run(() => postStatus({ status }), "Posted successfully!", "Posting...")}
                                                         disabled={!status.trim()}
                                                         className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition text-white disabled:opacity-50 flex items-center gap-2"
                                                     >
@@ -449,22 +472,22 @@ export default function HookLab() {
                                                     </button>
                                                 )}
                                                 {selectedHook === "useFavouriteStatus" && (
-                                                    <button onClick={() => run(() => favourite(statusId))} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-500 rounded-lg hover:shadow-lg hover:shadow-pink-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                    <button onClick={() => run(() => favourite(statusId), "Favorited!", "Favoriting...")} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-500 rounded-lg hover:shadow-lg hover:shadow-pink-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
                                                         <Heart className="w-5 h-5" /> Favourite
                                                     </button>
                                                 )}
                                                 {selectedHook === "useReblogStatus" && (
-                                                    <button onClick={() => run(() => reblog(statusId))} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:shadow-lg hover:shadow-green-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                    <button onClick={() => run(() => reblog(statusId), "Reblogged!", "Reblogging...")} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:shadow-lg hover:shadow-green-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
                                                         <Repeat2 className="w-5 h-5" /> Reblog
                                                     </button>
                                                 )}
                                                 {selectedHook === "useBookmarkStatus" && (
-                                                    <button onClick={() => run(() => bookmark(statusId))} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-500 rounded-lg hover:shadow-lg hover:shadow-purple-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                    <button onClick={() => run(() => bookmark(statusId), "Bookmarked!", "Bookmarking...")} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-500 rounded-lg hover:shadow-lg hover:shadow-purple-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
                                                         <Bookmark className="w-5 h-5" /> Bookmark
                                                     </button>
                                                 )}
                                                 {selectedHook === "useAddMutedWord" && (
-                                                    <button onClick={() => run(() => addMutedWord({ phrase: muteWord }))} disabled={!muteWord.trim()} className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 rounded-lg hover:shadow-lg hover:shadow-red-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                    <button onClick={() => run(() => addMutedWord({ phrase: muteWord }), `Muted "${muteWord}"`, "Adding mute...")} disabled={!muteWord.trim()} className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 rounded-lg hover:shadow-lg hover:shadow-red-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
                                                         <VolumeX className="w-5 h-5" /> Mute Word
                                                     </button>
                                                 )}
@@ -492,16 +515,22 @@ export default function HookLab() {
                                                                     </div>
                                                                     <div className="flex flex-wrap gap-2 mt-4">
                                                                         {["useFavouriteStatus", "useReblogStatus", "useBookmarkStatus"].includes(selectedHook) && (
-                                                                            <button onClick={() => setStatusId(post.id)} className="text-xs px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 rounded-lg border border-blue-500/60 text-blue-200 font-medium transition-all">
+                                                                            <button onClick={() => {
+                                                                                setStatusId(post.id)
+                                                                                toast.success("Status ID loaded!", { description: `...${shortId}` })
+                                                                            }} className="text-xs px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 rounded-lg border border-blue-500/60 text-blue-200 font-medium transition-all">
                                                                                 Use ID: ...{shortId}
                                                                             </button>
                                                                         )}
                                                                         {selectedHook === "useAddMutedWord" && firstWord.length > 2 && (
-                                                                            <button onClick={() => setMuteWord(firstWord)} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 rounded-lg border border-red-500/60 text-red-200 font-medium transition-all">
+                                                                            <button onClick={() => {
+                                                                                setMuteWord(firstWord)
+                                                                                toast.info(`Ready to mute #${firstWord}`)
+                                                                            }} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 rounded-lg border border-red-500/60 text-red-200 font-medium transition-all">
                                                                                 Mute #{firstWord}
                                                                             </button>
                                                                         )}
-                                                                        <button onClick={() => navigator.clipboard.writeText(post.id)} className="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/70 rounded-lg border border-gray-500/50 text-gray-300 transition-all">
+                                                                        <button onClick={() => copyText(post.id, "Status ID")} className="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/70 rounded-lg border border-gray-500/50 text-gray-300 transition-all">
                                                                             Copy ID
                                                                         </button>
                                                                     </div>
@@ -557,7 +586,13 @@ export default function HookLab() {
                                         <Zap className="w-4 h-4 text-blue-400 animate-pulse" />
                                         Response Log
                                     </h3>
-                                    <button onClick={() => setLastOutput(null)} className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded hover:bg-blue-600/10">
+                                    <button
+                                        onClick={() => {
+                                            setLastOutput(null)
+                                            toast.info("Response log cleared")
+                                        }}
+                                        className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded hover:bg-blue-600/10"
+                                    >
                                         Clear
                                     </button>
                                 </div>
