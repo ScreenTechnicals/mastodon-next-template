@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import type React from "react"
-
 import { useBookmarkStatus } from "@/hooks/mutations/use-bookmark-status.hook"
 import { useFavouriteStatus } from "@/hooks/mutations/use-favourite-status.hook"
 import { useAddMutedWord } from "@/hooks/mutations/use-mute-actions.hook"
@@ -16,25 +14,22 @@ import { useStreamingTimeline } from "@/hooks/use-streaming-timeline.hook"
 import { useTrendingLinks } from "@/hooks/use-trending-links.hook"
 import { useTrendingPosts } from "@/hooks/use-trending-posts.hook"
 import { useTrendingTags } from "@/hooks/use-trending-tags.hook"
+import { useUserFollowers } from "@/hooks/use-user-followers.hook"
+import { useUserFollowing } from "@/hooks/use-user-following.hook"
+import { useUserPosts } from "@/hooks/use-user-posts.hook"
 import { useUserProfileInfo } from "@/hooks/use-user-profile-info.hook"
 import {
-    Bookmark,
-    ChevronDown,
-    ChevronRight,
-    Copy,
-    Heart,
-    Home,
-    MessageCircle,
+    Bookmark, ChevronDown, ChevronRight,
+    Clock,
+    Copy, Heart, Home,
     Monitor,
-    Repeat2,
-    Search,
-    Send,
-    Settings,
-    TrendingUp,
-    User,
-    VolumeX,
-    Zap,
+    RefreshCw,
+    Repeat2, Search, Send, Settings,
+    TrendingUp, User, VolumeX,
+    XCircle,
+    Zap
 } from "lucide-react"
+import type React from "react"
 import { useState } from "react"
 
 type HookKey =
@@ -52,33 +47,26 @@ type HookKey =
     | "useReblogStatus"
     | "useBookmarkStatus"
     | "useAddMutedWord"
+    | "useUserFollowing"
+    | "useUserFollowers"
+    | "useUserPosts"
 
 const hookCategories = [
     {
         name: "Authentication & Client",
         icon: <Settings className="w-4 h-4" />,
         hooks: [
-            { key: "useMastoClient", label: "useMastoClient", desc: "Creates authenticated REST client", type: "Utility" },
-            {
-                key: "useUserSession",
-                label: "useUserSession",
-                desc: "Manages access token from cookies/storage",
-                type: "Utility",
-            },
+            { key: "useMastoClient", label: "useMastoClient", desc: "Authenticated REST client", type: "Utility" },
+            { key: "useUserSession", label: "useUserSession", desc: "Token from cookies/storage", type: "Utility" },
         ],
     },
     {
         name: "User Info & Relations",
         icon: <User className="w-4 h-4" />,
         hooks: [
-            {
-                key: "useUserProfileInfo",
-                label: "useUserProfileInfo",
-                desc: "Fetches your profile (name, avatar, stats)",
-                type: "Query",
-            },
-            { key: "useUserPosts", label: "useUserPosts", desc: "Your or any user's posts", type: "Query" },
-            { key: "useUserFollowers", label: "useUserFollowers", desc: "List of followers", type: "Query" },
+            { key: "useUserProfileInfo", label: "useUserProfileInfo", desc: "Your profile & stats", type: "Query" },
+            { key: "useUserPosts", label: "useUserPosts", desc: "Your recent posts", type: "Query" },
+            { key: "useUserFollowers", label: "useUserFollowers", desc: "Who follows you", type: "Query" },
             { key: "useUserFollowing", label: "useUserFollowing", desc: "Accounts you follow", type: "Query" },
         ],
     },
@@ -88,7 +76,6 @@ const hookCategories = [
         hooks: [
             { key: "useHomeTimeline", label: "useHomeTimeline", desc: "Your personalized feed", type: "Query" },
             { key: "usePublicTimeline", label: "usePublicTimeline", desc: "Global public posts", type: "Query" },
-            { key: "useHashtagTimeline", label: "useHashtagTimeline", desc: "Posts by hashtag", type: "Query" },
             { key: "useStreamingTimeline", label: "useStreamingTimeline", desc: "Live WebSocket stream", type: "Stream" },
         ],
     },
@@ -97,8 +84,6 @@ const hookCategories = [
         icon: <Send className="w-4 h-4" />,
         hooks: [
             { key: "usePostStatus", label: "usePostStatus", desc: "Create a new post", type: "Mutation" },
-            { key: "useReplyStatus", label: "useReplyStatus", desc: "Reply to a post", type: "Mutation" },
-            { key: "useUploadMedia", label: "useUploadMedia", desc: "Upload images/videos", type: "Mutation" },
         ],
     },
     {
@@ -108,15 +93,6 @@ const hookCategories = [
             { key: "useFavouriteStatus", label: "useFavouriteStatus", desc: "Like a post", type: "Mutation" },
             { key: "useReblogStatus", label: "useReblogStatus", desc: "Boost/reblog", type: "Mutation" },
             { key: "useBookmarkStatus", label: "useBookmarkStatus", desc: "Add to bookmarks", type: "Mutation" },
-            { key: "useToggleFavourite", label: "useToggleFavourite", desc: "Toggle like state", type: "Mutation" },
-        ],
-    },
-    {
-        name: "Notifications & Mentions",
-        icon: <MessageCircle className="w-4 h-4" />,
-        hooks: [
-            { key: "useNotifications", label: "useNotifications", desc: "Mentions, boosts, likes", type: "Query" },
-            { key: "usePrivateMentions", label: "usePrivateMentions", desc: "Direct messages", type: "Query" },
         ],
     },
     {
@@ -134,7 +110,6 @@ const hookCategories = [
         hooks: [
             { key: "useMutedUsers", label: "useMutedUsers", desc: "Muted accounts", type: "Query" },
             { key: "useMutedWords", label: "useMutedWords", desc: "Keyword filters", type: "Query" },
-            { key: "useMutedDomains", label: "useMutedDomains", desc: "Blocked domains", type: "Query" },
             { key: "useAddMutedWord", label: "useAddMutedWord", desc: "Add mute filter", type: "Mutation" },
         ],
     },
@@ -143,27 +118,35 @@ const hookCategories = [
 export default function HookLab() {
     const [selectedHook, setSelectedHook] = useState<HookKey | null>(null)
     const [search, setSearch] = useState("")
-    const [expandedCats, setExpandedCats] = useState<string[]>(["User Info & Relations", "Timelines", "Interactions"])
+    const [expandedCats, setExpandedCats] = useState<string[]>([
+        "User Info & Relations", "Timelines", "Interactions", "Posting & Media",
+        "Trending Content", "Moderation & Filters"
+    ])
     const [lastOutput, setLastOutput] = useState<any>(null)
     const [status, setStatus] = useState("")
     const [statusId, setStatusId] = useState("")
     const [muteWord, setMuteWord] = useState("")
 
-    // Active hooks
+    // All hooks
     const { data: user } = useUserProfileInfo()
-    const { data: homeFeed } = useHomeTimeline()
-    const { data: publicFeed } = usePublicTimeline()
-    const { data: trendingPosts } = useTrendingPosts()
-    const { data: trendingTags } = useTrendingTags()
-    const { data: trendingLinks } = useTrendingLinks()
-    const { data: mutedUsers } = useMutedUsers()
-    const { data: mutedWords } = useMutedWords()
+    const { data: homeFeed, refetch: refetchHome } = useHomeTimeline()
+    const { data: publicFeed, refetch: refetchPublic } = usePublicTimeline()
+    const { data: trendingPosts, refetch: refetchTrendingPosts } = useTrendingPosts()
+    const { data: trendingTags, refetch: refetchTrendingTags } = useTrendingTags()
+    const { data: trendingLinks, refetch: refetchTrendingLinks } = useTrendingLinks()
+    const { data: mutedUsers, refetch: refetchMutedUsers } = useMutedUsers()
+    const { data: mutedWords, refetch: refetchMutedWords } = useMutedWords()
     const { events } = useStreamingTimeline("public")
     const { mutateAsync: postStatus } = usePostStatus()
     const { mutateAsync: favourite } = useFavouriteStatus()
     const { mutateAsync: reblog } = useReblogStatus()
     const { mutateAsync: bookmark } = useBookmarkStatus()
     const { mutateAsync: addMutedWord } = useAddMutedWord()
+    const { data: userPosts, refetch: refetchUserPosts } = useUserPosts()
+    const { data: userFollowing, refetch: refetchFollowing } = useUserFollowing()
+    const { data: userFollowers, refetch: refetchFollowers } = useUserFollowers()
+
+    const recentPosts = homeFeed?.slice(0, 10) || []
 
     const run = async (fn: () => Promise<any>) => {
         try {
@@ -174,21 +157,28 @@ export default function HookLab() {
         }
     }
 
-    const selectedHookData = hookCategories.flatMap((c) => c.hooks).find((h) => h.key === selectedHook)
+    const triggerQuery = async (name: string, refetchFn: () => Promise<any>) => {
+        try {
+            const { data } = await refetchFn()
+            setLastOutput({ success: true, query: name, data, timestamp: new Date().toISOString() })
+        } catch (e: any) {
+            setLastOutput({ success: false, error: e.message, timestamp: new Date().toISOString() })
+        }
+    }
 
+    const selectedHookData = hookCategories.flatMap(c => c.hooks).find(h => h.key === selectedHook)
     const filteredCategories = hookCategories
-        .map((cat) => ({
+        .map(cat => ({
             ...cat,
-            hooks: cat.hooks.filter((h) => h.label.toLowerCase().includes(search.toLowerCase())),
+            hooks: cat.hooks.filter(h => h.label.toLowerCase().includes(search.toLowerCase()))
         }))
-        .filter((cat) => cat.hooks.length > 0)
+        .filter(cat => cat.hooks.length > 0)
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-950/20 text-foreground flex flex-col h-screen">
             <div className="flex-1 flex overflow-hidden">
-                {/* Sidebar is now fixed height (h-screen) and width, doesn't scroll with main content */}
-                <aside className="w-72 h-screen border-r border-blue-600/20 flex flex-col overflow-hidden flex-shrink-0 fixed left-0 top-0">
-                    {/* Sticky search header */}
+                {/* Sidebar */}
+                <aside className="w-72 h-screen border-r border-blue-600/20 flex flex-col overflow-hidden fixed left-0 top-0 z-50">
                     <div className="sticky top-0 z-10 bg-gradient-to-b from-card to-card/80 backdrop-blur border-b border-blue-600/20 p-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
@@ -196,35 +186,26 @@ export default function HookLab() {
                                 placeholder="Search hooks..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                className="w-full pl-10 pr-4 py-2.5 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
-
-                    {/* Sidebar body scrolls independently */}
                     <div className="flex-1 overflow-y-auto bg-gradient-to-b from-card via-card to-blue-950/5">
                         <div className="p-4 space-y-3">
                             {filteredCategories.map((cat) => (
                                 <div key={cat.name}>
                                     <button
-                                        onClick={() =>
-                                            setExpandedCats((prev) =>
-                                                prev.includes(cat.name) ? prev.filter((c) => c !== cat.name) : [...prev, cat.name],
-                                            )
-                                        }
+                                        onClick={() => setExpandedCats(prev =>
+                                            prev.includes(cat.name) ? prev.filter(c => c !== cat.name) : [...prev, cat.name]
+                                        )}
                                         className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-blue-600/10 transition border border-transparent hover:border-blue-600/20"
                                     >
                                         <div className="flex items-center gap-2">
                                             <span className="text-blue-500">{cat.icon}</span>
-                                            <span className="text-sm font-semibold text-foreground">{cat.name}</span>
+                                            <span className="text-sm font-semibold">{cat.name}</span>
                                         </div>
-                                        {expandedCats.includes(cat.name) ? (
-                                            <ChevronDown className="w-4 h-4" />
-                                        ) : (
-                                            <ChevronRight className="w-4 h-4" />
-                                        )}
+                                        {expandedCats.includes(cat.name) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                                     </button>
-
                                     {expandedCats.includes(cat.name) && (
                                         <div className="mt-2 space-y-1 pl-6">
                                             {cat.hooks.map((hook) => (
@@ -251,7 +232,7 @@ export default function HookLab() {
                     </div>
                 </aside>
 
-                {/* Main content offset to account for fixed sidebar */}
+                {/* Main */}
                 <main className="flex-1 flex flex-col overflow-hidden ml-72">
                     <div className="flex-1 overflow-y-auto">
                         <div className="max-w-4xl mx-auto p-8">
@@ -259,13 +240,12 @@ export default function HookLab() {
                                 <div className="text-center py-20">
                                     <Monitor className="w-20 h-20 mx-auto text-muted-foreground mb-6" />
                                     <h2 className="text-3xl font-bold text-muted-foreground">Select a hook to explore</h2>
-                                    <p className="text-muted-foreground mt-4">
-                                        Click any hook from the sidebar to view live data, usage, and test mutations
-                                    </p>
+                                    <p className="text-muted-foreground mt-4">Live data, mutations, streaming — all in one lab</p>
                                 </div>
                             ) : (
                                 <div className="space-y-8 pb-8">
-                                    <div className="bg-gradient-to-br from-card via-card to-blue-950/10 border border-blue-606/30 rounded-2xl p-8 shadow-lg">
+                                    {/* Header */}
+                                    <div className="bg-gradient-to-br from-card via-card to-blue-950/10 border border-blue-600/30 rounded-2xl p-8 shadow-lg">
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <h1 className="text-3xl font-bold text-foreground">{selectedHookData?.label}</h1>
@@ -285,138 +265,281 @@ export default function HookLab() {
                                         </div>
                                     </div>
 
-                                    {/* Hook-Specific Demo */}
+                                    {/* === FULL DEMOS === */}
                                     {selectedHook === "useUserProfileInfo" && user && (
-                                        <DemoCard title="Live Data">
+                                        <DemoCard title="Live Profile">
+                                            <button onClick={() => triggerQuery("useUserProfileInfo", async () => ({ data: user }))} className="mb-4 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now
+                                            </button>
                                             <div className="flex items-center gap-6">
-                                                <img
-                                                    src={user.avatar || "/placeholder.svg"}
-                                                    alt=""
-                                                    className="w-24 h-24 rounded-full ring-4 ring-blue-500"
-                                                />
+                                                <img src={user.avatar} alt="" className="w-24 h-24 rounded-full ring-4 ring-blue-500 shadow-xl" />
                                                 <div>
                                                     <p className="text-2xl font-bold">{user.displayName}</p>
                                                     <p className="text-muted-foreground">@{user.acct}</p>
                                                     <div className="flex gap-6 mt-4 text-sm">
-                                                        <div>
-                                                            <strong>{user.statusesCount}</strong> posts
-                                                        </div>
-                                                        <div>
-                                                            <strong>{user.followersCount}</strong> followers
-                                                        </div>
-                                                        <div>
-                                                            <strong>{user.followingCount}</strong> following
-                                                        </div>
+                                                        <div><strong>{user.statusesCount}</strong> posts</div>
+                                                        <div><strong>{user.followersCount}</strong> followers</div>
+                                                        <div><strong>{user.followingCount}</strong> following</div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </DemoCard>
                                     )}
 
-                                    {selectedHook === "usePostStatus" && (
-                                        <DemoCard title="Test Mutation">
-                                            <textarea
-                                                placeholder="What's happening?"
-                                                value={status}
-                                                onChange={(e) => setStatus(e.target.value)}
-                                                className="w-full h-32 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                            />
-                                            <button
-                                                onClick={() => run(() => postStatus({ status }))}
-                                                className="mt-4 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition text-white"
-                                            >
-                                                <Send className="w-5 h-5 inline mr-2" /> Post Status
+                                    {selectedHook === "useUserFollowing" && (
+                                        <DemoCard title="Accounts You Follow">
+                                            <button onClick={() => triggerQuery("useUserFollowing", refetchFollowing)} className="mb-4 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now ({userFollowing?.length || 0})
                                             </button>
-                                        </DemoCard>
-                                    )}
-
-                                    {["useFavouriteStatus", "useReblogStatus", "useBookmarkStatus"].includes(selectedHook) && (
-                                        <DemoCard title="Test Interaction">
-                                            <input
-                                                placeholder="Enter Status ID"
-                                                value={statusId}
-                                                onChange={(e) => setStatusId(e.target.value)}
-                                                className="w-full px-4 py-3 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                            />
-                                            <div className="flex gap-3 mt-4">
-                                                {selectedHook === "useFavouriteStatus" && (
-                                                    <button
-                                                        onClick={() => run(() => favourite(statusId))}
-                                                        className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-500 rounded-lg hover:shadow-lg hover:shadow-pink-500/50 text-white font-medium transition-all"
-                                                    >
-                                                        <Heart className="w-5 h-5 inline mr-2" /> Favourite
-                                                    </button>
-                                                )}
-                                                {selectedHook === "useReblogStatus" && (
-                                                    <button
-                                                        onClick={() => run(() => reblog(statusId))}
-                                                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:shadow-lg hover:shadow-green-500/50 text-white font-medium transition-all"
-                                                    >
-                                                        <Repeat2 className="w-5 h-5 inline mr-2" /> Reblog
-                                                    </button>
-                                                )}
-                                                {selectedHook === "useBookmarkStatus" && (
-                                                    <button
-                                                        onClick={() => run(() => bookmark(statusId))}
-                                                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-500 rounded-lg hover:shadow-lg hover:shadow-purple-500/50 text-white font-medium transition-all"
-                                                    >
-                                                        <Bookmark className="w-5 h-5 inline mr-2" /> Bookmark
-                                                    </button>
-                                                )}
+                                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                                {userFollowing?.slice(0, 15).map((acc: any) => (
+                                                    <div key={acc.id} className="flex items-center gap-4 p-4 bg-input/50 rounded-xl border border-blue-600/20 hover:border-blue-500/50 transition">
+                                                        <img src={acc.avatar} alt="" className="w-12 h-12 rounded-full" />
+                                                        <div className="flex-1">
+                                                            <p className="font-medium">{acc.displayName}</p>
+                                                            <p className="text-sm text-muted-foreground">@{acc.acct}</p>
+                                                        </div>
+                                                        <button onClick={() => navigator.clipboard.writeText(acc.acct)} className="text-xs opacity-70 hover:opacity-100">
+                                                            <Copy className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </DemoCard>
                                     )}
 
-                                    {selectedHook === "useAddMutedWord" && (
-                                        <DemoCard title="Add Filter">
-                                            <input
-                                                placeholder="e.g., crypto, nft"
-                                                value={muteWord}
-                                                onChange={(e) => setMuteWord(e.target.value)}
-                                                className="w-full px-4 py-3 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                            />
-                                            <button
-                                                onClick={() => run(() => addMutedWord({ phrase: muteWord }))}
-                                                className="mt-4 px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 rounded-lg hover:shadow-lg hover:shadow-red-500/50 text-white font-medium transition-all"
-                                            >
-                                                <VolumeX className="w-5 h-5 inline mr-2" /> Mute Word
+                                    {selectedHook === "useUserFollowers" && (
+                                        <DemoCard title="Your Followers">
+                                            <button onClick={() => triggerQuery("useUserFollowers", refetchFollowers)} className="mb-4 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now ({userFollowers?.length || 0})
                                             </button>
+                                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                                {userFollowers?.slice(0, 15).map((acc: any) => (
+                                                    <div key={acc.id} className="flex items-center gap-4 p-4 bg-input/50 rounded-xl border border-blue-600/20">
+                                                        <img src={acc.avatar} alt="" className="w-12 h-12 rounded-full" />
+                                                        <div>
+                                                            <p className="font-medium">{acc.displayName}</p>
+                                                            <p className="text-sm text-muted-foreground">@{acc.acct}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
+                                    {selectedHook === "useUserPosts" && (
+                                        <DemoCard title="Your Recent Posts">
+                                            <button onClick={() => triggerQuery("useUserPosts", refetchUserPosts)} className="mb-4 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now
+                                            </button>
+                                            <div className="space-y-4">
+                                                {userPosts?.slice(0, 6).map((p: any) => (
+                                                    <div key={p.id} className="bg-input/50 rounded-xl p-5 border border-blue-600/20">
+                                                        <div dangerouslySetInnerHTML={{ __html: p.content }} />
+                                                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
+                                                            <Clock className="w-3 h-3" />
+                                                            {new Date(p.createdAt).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
+                                    {selectedHook === "useMutedUsers" && (
+                                        <DemoCard title="Muted Accounts">
+                                            <button onClick={() => triggerQuery("useMutedUsers", refetchMutedUsers)} className="mb-4 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now ({mutedUsers?.length || 0})
+                                            </button>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {mutedUsers?.map((u: any) => (
+                                                    <div key={u.id} className="flex items-center gap-3 p-3 bg-red-950/20 rounded-lg border border-red-600/30">
+                                                        <img src={u.avatar} alt="" className="w-10 h-10 rounded-full" />
+                                                        <p className="text-sm font-medium">@{u.acct}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
+                                    {selectedHook === "useMutedWords" && (
+                                        <DemoCard title="Muted Keywords">
+                                            <button onClick={() => triggerQuery("useMutedWords", refetchMutedWords)} className="mb-4 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now ({mutedWords?.length || 0})
+                                            </button>
+                                            <div className="flex flex-wrap gap-2">
+                                                {mutedWords?.map((word, i) => (
+                                                    <span key={i} className="px-3 py-1.5 bg-red-600/20 border border-red-500/50 rounded-full text-sm flex items-center gap-2">
+                                                        #{String(word)}
+                                                        <XCircle className="w-3 h-3 opacity-50 hover:opacity-100 cursor-pointer" />
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
+                                    {selectedHook === "useTrendingTags" && (
+                                        <DemoCard title="Trending Hashtags">
+                                            <button onClick={() => triggerQuery("useTrendingTags", refetchTrendingTags)} className="mb-4 px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now
+                                            </button>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                {trendingTags?.slice(0, 9).map((tag: any) => (
+                                                    <div key={tag.name} className="p-4 bg-purple-950/20 rounded-xl border border-purple-600/40 text-center">
+                                                        <p className="text-lg font-bold">#{tag.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{tag.history[0]?.accounts} accounts</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
+                                    {selectedHook === "useTrendingLinks" && (
+                                        <DemoCard title="Trending Links">
+                                            <button onClick={() => triggerQuery("useTrendingLinks", refetchTrendingLinks)} className="mb-4 px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now
+                                            </button>
+                                            <div className="space-y-3">
+                                                {trendingLinks?.slice(0, 8).map((link: any) => (
+                                                    <a href={link.url} target="_blank" key={link.url} className="block p-4 bg-cyan-950/20 rounded-xl border border-cyan-600/40 hover:border-cyan-500/60 transition">
+                                                        <p className="font-medium text-cyan-300">{link.title || link.url}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">{link.history[0]?.accounts} shares today</p>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
+                                    {/* FULL MUTATION UI WITH SUGGESTIONS */}
+                                    {["useFavouriteStatus", "useReblogStatus", "useBookmarkStatus", "useAddMutedWord", "usePostStatus"].includes(selectedHook) && (
+                                        <DemoCard title="Test Mutation">
+                                            {selectedHook === "usePostStatus" && (
+                                                <textarea
+                                                    placeholder="What's happening?"
+                                                    value={status}
+                                                    onChange={(e) => setStatus(e.target.value)}
+                                                    className="w-full h-32 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                />
+                                            )}
+                                            {["useFavouriteStatus", "useReblogStatus", "useBookmarkStatus"].includes(selectedHook) && (
+                                                <input
+                                                    placeholder="Enter Status ID"
+                                                    value={statusId}
+                                                    onChange={(e) => setStatusId(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                />
+                                            )}
+                                            {selectedHook === "useAddMutedWord" && (
+                                                <input
+                                                    placeholder="e.g., crypto, nft"
+                                                    value={muteWord}
+                                                    onChange={(e) => setMuteWord(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                />
+                                            )}
+
+                                            <div className="flex gap-3 mt-4">
+                                                {selectedHook === "usePostStatus" && (
+                                                    <button
+                                                        onClick={() => run(() => postStatus({ status }))}
+                                                        disabled={!status.trim()}
+                                                        className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition text-white disabled:opacity-50 flex items-center gap-2"
+                                                    >
+                                                        <Send className="w-5 h-5" /> Post
+                                                    </button>
+                                                )}
+                                                {selectedHook === "useFavouriteStatus" && (
+                                                    <button onClick={() => run(() => favourite(statusId))} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-500 rounded-lg hover:shadow-lg hover:shadow-pink-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                        <Heart className="w-5 h-5" /> Favourite
+                                                    </button>
+                                                )}
+                                                {selectedHook === "useReblogStatus" && (
+                                                    <button onClick={() => run(() => reblog(statusId))} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:shadow-lg hover:shadow-green-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                        <Repeat2 className="w-5 h-5" /> Reblog
+                                                    </button>
+                                                )}
+                                                {selectedHook === "useBookmarkStatus" && (
+                                                    <button onClick={() => run(() => bookmark(statusId))} disabled={!statusId} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-500 rounded-lg hover:shadow-lg hover:shadow-purple-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                        <Bookmark className="w-5 h-5" /> Bookmark
+                                                    </button>
+                                                )}
+                                                {selectedHook === "useAddMutedWord" && (
+                                                    <button onClick={() => run(() => addMutedWord({ phrase: muteWord }))} disabled={!muteWord.trim()} className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 rounded-lg hover:shadow-lg hover:shadow-red-500/50 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2">
+                                                        <VolumeX className="w-5 h-5" /> Mute Word
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {recentPosts.length > 0 && (
+                                                <div className="mt-8">
+                                                    <p className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                                        <Zap className="w-4 h-4 text-yellow-400 animate-pulse" />
+                                                        Try with a real post:
+                                                    </p>
+                                                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                                                        {recentPosts.map((post: any) => {
+                                                            const cleanText = post.content.replace(/<[^>]*>/g, "").trim()
+                                                            const firstWord = cleanText.split(/\s+/)[0]?.replace(/[^\w]/g, "") || ""
+                                                            const shortId = post.id.slice(-8)
+
+                                                            return (
+                                                                <div key={post.id} className="bg-gradient-to-r from-input to-blue-950/20 rounded-xl p-5 border border-blue-600/30 hover:border-blue-500/60 transition-all group">
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="flex-1">
+                                                                            <p className="text-sm font-medium text-blue-300">@{post.account.acct}</p>
+                                                                            <p className="text-sm text-foreground mt-1 line-clamp-2">{cleanText}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2 mt-4">
+                                                                        {["useFavouriteStatus", "useReblogStatus", "useBookmarkStatus"].includes(selectedHook) && (
+                                                                            <button onClick={() => setStatusId(post.id)} className="text-xs px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 rounded-lg border border-blue-500/60 text-blue-200 font-medium transition-all">
+                                                                                Use ID: ...{shortId}
+                                                                            </button>
+                                                                        )}
+                                                                        {selectedHook === "useAddMutedWord" && firstWord.length > 2 && (
+                                                                            <button onClick={() => setMuteWord(firstWord)} className="text-xs px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 rounded-lg border border-red-500/60 text-red-200 font-medium transition-all">
+                                                                                Mute #{firstWord}
+                                                                            </button>
+                                                                        )}
+                                                                        <button onClick={() => navigator.clipboard.writeText(post.id)} className="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/70 rounded-lg border border-gray-500/50 text-gray-300 transition-all">
+                                                                            Copy ID
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </DemoCard>
+                                    )}
+
+                                    {/* Other hooks... */}
+                                    {["useHomeTimeline", "usePublicTimeline", "useTrendingPosts"].includes(selectedHook) && (
+                                        <DemoCard title="Live Feed">
+                                            <button onClick={() => triggerQuery(selectedHook, selectedHook === "useHomeTimeline" ? refetchHome : selectedHook === "usePublicTimeline" ? refetchPublic : refetchTrendingPosts)} className="mb-4 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                <RefreshCw className="w-4 h-4" /> Trigger Now
+                                            </button>
+                                            <div className="space-y-4">
+                                                {(selectedHook === "useHomeTimeline" ? homeFeed : selectedHook === "usePublicTimeline" ? publicFeed : trendingPosts)?.slice(0, 5).map((p: any) => (
+                                                    <div key={p.id} className="bg-input/50 rounded-xl p-5 border border-blue-600/20">
+                                                        <p className="text-sm font-medium text-blue-300">@{p.account.acct}</p>
+                                                        <div className="mt-2" dangerouslySetInnerHTML={{ __html: p.content }} />
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </DemoCard>
                                     )}
 
                                     {selectedHook === "useStreamingTimeline" && (
-                                        <DemoCard title="Live Stream">
-                                            <div className="bg-gradient-to-r from-input to-blue-950/20 rounded-xl p-4 h-96 overflow-y-auto font-mono text-sm border border-blue-600/30">
-                                                {events?.slice(0, 15).map((ev) => (
-                                                    <div key={ev.id} className="py-2 border-b border-blue-600/20 last:border-0">
-                                                        <span className="text-green-400">● Live</span>{" "}
-                                                        <span className="text-muted-foreground text-xs">@{ev.account.acct}</span>
-                                                        <div dangerouslySetInnerHTML={{ __html: ev.content }} />
+                                        <DemoCard title="Live Public Stream">
+                                            <div className="bg-input/50 rounded-xl p-4 h-96 overflow-y-auto font-mono text-sm border border-blue-600/30">
+                                                {events?.slice(0, 20).map((ev: any) => (
+                                                    <div key={ev.id} className="py-3 border-b border-blue-600/20 last:border-0">
+                                                        <span className="text-green-400">Live</span> <span className="text-cyan-400">@{ev.account.acct}</span>
+                                                        <div className="mt-1" dangerouslySetInnerHTML={{ __html: ev.content }} />
                                                     </div>
-                                                )) || <p className="text-muted-foreground">Waiting for events...</p>}
-                                            </div>
-                                        </DemoCard>
-                                    )}
-
-                                    {["useHomeTimeline", "usePublicTimeline", "useTrendingPosts"].includes(selectedHook) && (
-                                        <DemoCard title="Feed Preview">
-                                            <div className="space-y-4">
-                                                {(selectedHook === "useHomeTimeline"
-                                                    ? homeFeed
-                                                    : selectedHook === "usePublicTimeline"
-                                                        ? publicFeed
-                                                        : trendingPosts
-                                                )
-                                                    ?.slice(0, 5)
-                                                    .map((p: any) => (
-                                                        <div
-                                                            key={p.id}
-                                                            className="bg-gradient-to-r from-input to-blue-950/20 rounded-xl p-4 border border-blue-600/30"
-                                                        >
-                                                            <p className="text-sm font-medium">@{p.account.acct}</p>
-                                                            <div className="mt-2" dangerouslySetInnerHTML={{ __html: p.content }} />
-                                                        </div>
-                                                    ))}
+                                                )) || <p className="text-muted-foreground">Waiting for live events...</p>}
                                             </div>
                                         </DemoCard>
                                     )}
@@ -425,6 +548,7 @@ export default function HookLab() {
                         </div>
                     </div>
 
+                    {/* Response Log */}
                     <div className="border-t border-blue-600/20 bg-gradient-to-t from-background via-background/95 to-transparent backdrop-blur-sm">
                         <div className="max-w-4xl mx-auto px-8 py-4">
                             <div className="bg-gradient-to-br from-card via-blue-950/20 to-card border border-blue-600/40 rounded-xl shadow-xl overflow-hidden">
@@ -433,20 +557,17 @@ export default function HookLab() {
                                         <Zap className="w-4 h-4 text-blue-400 animate-pulse" />
                                         Response Log
                                     </h3>
-                                    <button
-                                        onClick={() => setLastOutput(null)}
-                                        className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded hover:bg-blue-600/10 border border-transparent hover:border-blue-600/20"
-                                    >
+                                    <button onClick={() => setLastOutput(null)} className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded hover:bg-blue-600/10">
                                         Clear
                                     </button>
                                 </div>
-                                <pre className="p-4 bg-gradient-to-br from-input via-blue-950/30 to-input text-xs font-mono max-h-48 overflow-auto text-foreground border-t border-blue-600/20">
+                                <pre className="p-4 bg-gradient-to-br from-input via-blue-950/30 to-input text-xs font-mono max-h-48 overflow-auto text-foreground">
                                     {lastOutput ? (
                                         <code className={lastOutput.success ? "text-green-400" : "text-red-400"}>
                                             {JSON.stringify(lastOutput, null, 2)}
                                         </code>
                                     ) : (
-                                        <span className="text-muted-foreground">No response yet. Trigger a mutation to see output.</span>
+                                        <span className="text-muted-foreground">Click Trigger Now to see live API response!</span>
                                     )}
                                 </pre>
                             </div>
@@ -460,7 +581,7 @@ export default function HookLab() {
 
 function DemoCard({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="bg-gradient-to-br from-card via-card to-blue-950/10 border border-blue-606/30 rounded-2xl p-6 shadow-lg">
+        <div className="bg-gradient-to-br from-card via-card to-blue-950/10 border border-blue-600/30 rounded-2xl p-6 shadow-lg">
             <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-3">
                 <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse"></div>
                 {title}

@@ -40,14 +40,14 @@ export default function LandingPage() {
           <div className="pt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={() => router.push("/test-hooks")}
-              className="px-8 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 hover:scale-105 flex items-center gap-2 group"
+              className="px-8 cursor-pointer py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 hover:scale-105 flex items-center gap-2 group"
             >
               <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
               Test Hooks
             </button>
             <button
               onClick={() => window.open("https://github.com/ScreenTechnicals/mastodon-next-template", "_blank")}
-              className="px-8 py-3 border border-slate-600 hover:border-slate-400 text-slate-200 font-semibold rounded-full hover:bg-slate-900/50 transition-all duration-300 flex items-center gap-2 group"
+              className="px-8 py-3 border cursor-pointer border-slate-600 hover:border-slate-400 text-slate-200 font-semibold rounded-full hover:bg-slate-900/50 transition-all duration-300 flex items-center gap-2 group"
             >
               <Github className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
               View GitHub
