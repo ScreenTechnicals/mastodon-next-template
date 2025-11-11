@@ -7,9 +7,8 @@ export default function LandingPage() {
   const router = useRouter()
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white overflow-hidden">
-      {/* Grid background effect */}
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
+    <main className="min-h-screen bg-linear-to-br from-black via-slate-900 to-black text-white overflow-hidden">
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-size-[50px_50px] pointer-events-none" />
 
       {/* Gradient orbs */}
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -18,7 +17,7 @@ export default function LandingPage() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
         {/* Logo Badge */}
         <div className="mb-8 animate-in fade-in duration-700">
-          <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/30">
+          <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-linear-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/30">
             <span className="text-3xl font-black text-white">M</span>
           </div>
         </div>
@@ -26,7 +25,7 @@ export default function LandingPage() {
         {/* Main Content */}
         <div className="text-center space-y-6 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
           <div className="space-y-4">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-300">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-white via-white to-slate-300">
               Mastodon + Next.js
             </h1>
             <p className="text-xl sm:text-2xl font-light text-slate-300">Developer playground for social integration</p>
@@ -41,7 +40,7 @@ export default function LandingPage() {
           <div className="pt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={() => router.push("/test-hooks")}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 hover:scale-105 flex items-center gap-2 group"
+              className="px-8 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 hover:scale-105 flex items-center gap-2 group"
             >
               <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
               Test Hooks
