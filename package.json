@@ -1,7 +1,19 @@
 {
-  "name": "x2",
-  "version": "0.1.0",
+  "name": "mastadon-next-template",
+  "version": "1.0.0",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/ScreenTechnicals/mastodon-next-template"
+  },
+  "author": {
+    "name": "Chinmaya Sa",
+    "email": "screentechnicals@gmail.com",
+    "url": "https://github.com/ScreenTechnicals"
+  },
+  "contributors": [],
+  "readme": "https://github.com/ScreenTechnicals/mastodon-next-template/blob/main/README.md",
+  "description": "mastodon-next-template is an open-source, interactive playground built with Next.js + Tailwind CSS, designed to explore, test, and visualize Mastodon API React hooks in real time. It provides a modern, developer-friendly interface to trigger queries, run mutations, and watch streaming events — all without touching the terminal.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

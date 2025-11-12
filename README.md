@@ -21,34 +21,11 @@
 
 | Layer             | Technology                                       |
 | :---------------- | :----------------------------------------------- |
-| **Frontend**      | Next.js 14, React 18, TypeScript                 |
-| **Styling**       | Tailwind CSS, shadcn/ui                          |
+| **Frontend**      | Next.js 16                                       |
+| **Styling**       | Tailwind CSS.                                    |
 | **Icons**         | lucide-react                                     |
-| **Notifications** | react-hot-toast                                  |
+| **Notifications** | Sonner                                           |
 | **API Layer**     | Mastodon SDK hooks (custom React Query wrappers) |
-
----
-
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── test-hooks/             # Main page
-│   └── layout.tsx              # App layout
-├── hooks/
-│   ├── use-home-timeline.hook.ts
-│   ├── use-trending-tags.hook.ts
-│   ├── mutations/
-│   │   ├── use-post-status.hook.ts
-│   │   ├── use-bookmark-status.hook.ts
-│   │   └── use-favourite-status.hook.ts
-│   └── ... (more)
-└── components/
-    ├── ui/
-    ├── toast-provider.tsx
-    └── ...
-```
 
 ---
 
@@ -64,9 +41,9 @@ cd mastodon-next-template
 ### 2️⃣ Install Dependencies
 
 ```bash
-npm install
+bun i
 # or
-pnpm install
+npm install
 ```
 
 ### 3️⃣ Configure Environment
@@ -74,13 +51,20 @@ pnpm install
 Create a `.env.local` file and add your Mastodon credentials:
 
 ```bash
-NEXT_PUBLIC_MASTODON_BASE_URL=https://mastodon.social
-NEXT_PUBLIC_MASTODON_ACCESS_TOKEN=your_access_token_here
+MASTO_INSTANCE="https://mastodon.social"
+MASTO_CLIENT_ID=""
+MASTO_CLIENT_SECRET=""
+MASTO_REDIRECT_URI="http://localhost:3000/api/auth/callback/mastodon"
+MASTO_ACCESS_TOKEN=""
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="supersecretkey"
 ```
 
 ### 4️⃣ Run Development Server
 
 ```bash
+bun dev
+# or 
 npm run dev
 ```
 
@@ -114,7 +98,7 @@ mastodon-next-template is open for collaboration! Follow these steps to contribu
 3. Make your changes and commit with clear messages
 
    ```bash
-   git commit -m "feat: added hook for useNotifications"
+   git commit -m "feat: added hook for <your hook name>"
    ```
 
 4. Push your branch and open a **Pull Request**
@@ -174,20 +158,6 @@ mastodon-next-template is open for collaboration! Follow these steps to contribu
 | **Trending Content**         | `useTrendingPosts`, `useTrendingTags`, `useTrendingLinks`                                      |
 | **Moderation & Filters**     | `useMutedUsers`, `useMutedWords`, `useMutedDomains`, `useMutedConversations`, `useMuteActions` |
 
----
-
-## 🪄 Toast Feedback Examples
-
-| Action           | Toast Message                          |
-| ---------------- | -------------------------------------- |
-| Query Started    | “Fetching useHomeTimeline…”            |
-| Query Success    | “useHomeTimeline loaded successfully!” |
-| Mutation Success | “Action successful!”                   |
-| Copy ID          | “Copied to clipboard!”                 |
-| Error            | “Something went wrong”                 |
-
----
-
 ## 🧰 Scripts
 
 | Command         | Description                     |
@@ -205,7 +175,6 @@ You can deploy mastodon-next-template easily using:
 
 * **Vercel** (recommended)
 * **Netlify**
-* **Docker**
 
 ### Example (Vercel)
 
