@@ -2,6 +2,7 @@
 "use client"
 import { useBookmarkStatus } from "@/hooks/mutations/use-bookmark-status.hook"
 import { useFavouriteStatus } from "@/hooks/mutations/use-favourite-status.hook"
+import { useFollowUser } from "@/hooks/mutations/use-follow-user.hook"
 import { useAddMutedWord } from "@/hooks/mutations/use-mute-actions.hook"
 import { usePostStatus } from "@/hooks/mutations/use-post-status.hook"
 import { useReblogStatus } from "@/hooks/mutations/use-reblog-status.hook"
@@ -9,6 +10,7 @@ import { useHomeTimeline } from "@/hooks/use-home-timeline.hook"
 import { useMutedUsers } from "@/hooks/use-muted-users.hook"
 import { useMutedWords } from "@/hooks/use-muted-words.hook"
 import { usePublicTimeline } from "@/hooks/use-public-timeline.hook"
+import { useSearchOrUrl } from "@/hooks/use-search-or-url.hook"
 import { useStreamingTimeline } from "@/hooks/use-streaming-timeline.hook"
 import { useTrendingLinks } from "@/hooks/use-trending-links.hook"
 import { useTrendingPosts } from "@/hooks/use-trending-posts.hook"
@@ -17,6 +19,7 @@ import { useUserFollowers } from "@/hooks/use-user-followers.hook"
 import { useUserFollowing } from "@/hooks/use-user-following.hook"
 import { useUserPosts } from "@/hooks/use-user-posts.hook"
 import { useUserProfileInfo } from "@/hooks/use-user-profile-info.hook"
+import { useWhoToFollow } from "@/hooks/use-who-to-follow.hook"
 import {
     Bookmark, ChevronDown, ChevronRight,
     Clock,
@@ -50,6 +53,8 @@ type HookKey =
     | "useUserFollowing"
     | "useUserFollowers"
     | "useUserPosts"
+    | "useWhoToFollow"
+    | "useSearchOrUrl"
 
 const hookCategories = [
     {
@@ -96,6 +101,14 @@ const hookCategories = [
         ],
     },
     {
+        name: "Discovery",
+        icon: <Search className="w-4 h-4" />,
+        hooks: [
+            { key: "useSearchOrUrl", label: "useSearchOrUrl", desc: "Search or resolve Mastodon URLs", type: "Query" },
+            { key: "useWhoToFollow", label: "useWhoToFollow", desc: "Suggested accounts to follow", type: "Query" },
+        ],
+    },
+    {
         name: "Trending Content",
         icon: <TrendingUp className="w-4 h-4" />,
         hooks: [
@@ -126,6 +139,7 @@ export default function HookLab() {
     const [status, setStatus] = useState("")
     const [statusId, setStatusId] = useState("")
     const [muteWord, setMuteWord] = useState("")
+    const [searchTerm, setSearchTerm] = useState("")
 
     // All hooks
     const { data: user } = useUserProfileInfo()
@@ -145,6 +159,10 @@ export default function HookLab() {
     const { data: userPosts, refetch: refetchUserPosts } = useUserPosts()
     const { data: userFollowing, refetch: refetchFollowing } = useUserFollowing()
     const { data: userFollowers, refetch: refetchFollowers } = useUserFollowers()
+    // Discovery
+    const { data: searchResults, refetch: refetchSearch } = useSearchOrUrl(searchTerm)
+    const { data: whoToFollow, refetch: refetchWhoToFollow } = useWhoToFollow()
+    const { mutateAsync: followUser, isPending: followPending } = useFollowUser()
 
     const recentPosts = homeFeed?.slice(0, 10) || []
 
@@ -572,6 +590,108 @@ export default function HookLab() {
                                             </div>
                                         </DemoCard>
                                     )}
+                                    {selectedHook === "useSearchOrUrl" && (
+                                        <DemoCard title="Search or Paste URL">
+                                            <div className="flex gap-2 mb-4">
+                                                <input
+                                                    type="text"
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    placeholder="Search posts, hashtags, or paste a Mastodon URL..."
+                                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-input to-blue-950/20 border border-blue-600/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                />
+                                                <button
+                                                    onClick={() => triggerQuery("useSearchOrUrl", refetchSearch)}
+                                                    disabled={!searchTerm.trim()}
+                                                    className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2"
+                                                >
+                                                    <Search className="w-4 h-4" /> Search
+                                                </button>
+                                            </div>
+
+                                            {searchResults && (
+                                                <div className="space-y-6">
+                                                    {searchResults.statuses.length > 0 && (
+                                                        <div>
+                                                            <h4 className="font-semibold text-blue-400 mb-2">Statuses</h4>
+                                                            <div className="space-y-3">
+                                                                {searchResults.statuses.slice(0, 5).map((s) => (
+                                                                    <div
+                                                                        key={s.id}
+                                                                        className="bg-input/50 rounded-lg p-4 border border-blue-600/20"
+                                                                    >
+                                                                        <p className="text-sm font-medium text-blue-300">@{s.account.acct}</p>
+                                                                        <div dangerouslySetInnerHTML={{ __html: s.content }} />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {searchResults.accounts.length > 0 && (
+                                                        <div>
+                                                            <h4 className="font-semibold text-green-400 mb-2">Accounts</h4>
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                {searchResults.accounts.slice(0, 6).map((a) => (
+                                                                    <div
+                                                                        key={a.id}
+                                                                        className="flex items-center gap-3 p-3 bg-green-950/20 rounded-lg border border-green-600/30"
+                                                                    >
+                                                                        <img src={a.avatar} alt="" className="w-10 h-10 rounded-full" />
+                                                                        <div>
+                                                                            <p className="text-sm font-medium">{a.displayName}</p>
+                                                                            <p className="text-xs text-muted-foreground">@{a.acct}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </DemoCard>
+                                    )}
+                                    {selectedHook === "useWhoToFollow" && (
+                                        <DemoCard title="Who to Follow">
+                                            <button
+                                                onClick={() => triggerQuery("useWhoToFollow", refetchWhoToFollow)}
+                                                className="mb-4 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg text-sm font-medium flex items-center gap-2"
+                                            >
+                                                <RefreshCw className="w-4 h-4" /> Refresh Suggestions
+                                            </button>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {whoToFollow?.slice(0, 10).map((user) => (
+                                                    <div
+                                                        key={user.id}
+                                                        className="flex items-center gap-4 p-4 bg-input/50 rounded-xl border border-blue-600/20 hover:border-blue-500/50 transition"
+                                                    >
+                                                        <img src={user.avatar} alt="" className="w-12 h-12 rounded-full" />
+                                                        <div className="flex-1">
+                                                            <p className="font-medium">{user.displayName}</p>
+                                                        </div>
+                                                        <button
+                                                            disabled={followPending}
+                                                            onClick={() =>
+                                                                run(
+                                                                    () => followUser({ accountId: user.id, follow: !user.following }),
+                                                                    user.following ? "Unfollowed!" : "Followed!",
+                                                                    user.following ? "Unfollowing..." : "Following..."
+                                                                )
+                                                            }
+                                                            className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${user.following
+                                                                ? "bg-red-600/20 border-red-600/40 hover:bg-red-600/30 text-red-300"
+                                                                : "bg-blue-600/20 border-blue-600/40 hover:bg-blue-600/30 text-blue-300"
+                                                                }`}
+                                                        >
+                                                            {user.following ? "Unfollow" : "Follow"}
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </DemoCard>
+                                    )}
+
                                 </div>
                             )}
                         </div>
