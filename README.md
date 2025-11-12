@@ -1,7 +1,6 @@
 
 <img width="1440" height="816" alt="Screenshot 2025-11-12 at 11 38 41 AM" src="https://github.com/user-attachments/assets/2fec4c39-ac29-4afb-a2d4-4bd7b425bb2a" />
 
-
 # 🧩 Mastodon Next Template - The Interactive Mastodon Hook Playground
 
 > mastodon-next-template is an open-source, interactive playground built with **Next.js + Tailwind CSS**, designed to explore, test, and visualize **Mastodon API React hooks** in real time.
@@ -115,7 +114,7 @@ mastodon-next-template is open for collaboration! Follow these steps to contribu
 
 ---
 
-## 🧱 Available Hooks
+# 🧱 Available Hooks
 
 | Hook                      | Type     | Description                                                                                         |
 | ------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
@@ -125,6 +124,7 @@ mastodon-next-template is open for collaboration! Follow these steps to contribu
 | **useUserPosts**          | Query    | Lists posts created by the authenticated user or another specified account.                         |
 | **useUserFollowers**      | Query    | Fetches all followers of the authenticated user or another account.                                 |
 | **useUserFollowing**      | Query    | Fetches all accounts followed by the authenticated user.                                            |
+| **useWhoToFollow**        | Query    | Suggests new accounts to follow using `/api/v2/suggestions`, enriched with relationship data.       |
 | **useHomeTimeline**       | Query    | Retrieves the user’s home timeline (posts from followed accounts).                                  |
 | **usePublicTimeline**     | Query    | Fetches the global public timeline (all visible public posts).                                      |
 | **useHashtagTimeline**    | Query    | Retrieves posts associated with a specific hashtag (e.g., `#NextJS`).                               |
@@ -137,12 +137,14 @@ mastodon-next-template is open for collaboration! Follow these steps to contribu
 | **useTrendingPosts**      | Query    | Fetches currently trending posts (statuses).                                                        |
 | **useTrendingTags**       | Query    | Fetches trending hashtags.                                                                          |
 | **useTrendingLinks**      | Query    | Fetches trending shared links.                                                                      |
+| **useSearchOrUrl**        | Query    | Performs full-text search across users, hashtags, and statuses, or resolves a Mastodon URL.         |
 | **useStreamingTimeline**  | Stream   | Subscribes to live timelines (`home`, `public`, or `local`) via Mastodon’s WebSocket streaming API. |
 | **usePostStatus**         | Mutation | Creates a new post (status) with optional media attachments.                                        |
 | **useReplyStatus**        | Mutation | Replies to an existing post using `inReplyToId`.                                                    |
 | **useFavouriteStatus**    | Mutation | Favourites (likes) a specific post.                                                                 |
 | **useReblogStatus**       | Mutation | Boosts (reblogs) a post to the user’s followers.                                                    |
 | **useBookmarkStatus**     | Mutation | Adds or removes a post from the user’s bookmarks.                                                   |
+| **useFollowUser**         | Mutation | Follows or unfollows a specific user by account ID.                                                 |
 | **useToggleFavourite**    | Mutation | Toggles a post’s favourite/unfavourite state dynamically.                                           |
 | **useUploadMedia**        | Mutation | Uploads image or video files with progress tracking and returns `mediaIds` for attaching to posts.  |
 | **useMuteActions**        | Mutation | Provides moderation actions — mute/unmute users, add/remove muted words (filters).                  |
@@ -151,16 +153,16 @@ mastodon-next-template is open for collaboration! Follow these steps to contribu
 
 ### ✅ Grouped by Purpose
 
-| Category                     | Hooks                                                                                          |
-| ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Authentication & Client**  | `useUserSession`, `useMastoClient`                                                             |
-| **User Info & Relations**    | `useUserProfileInfo`, `useUserFollowers`, `useUserFollowing`, `useUserPosts`                   |
-| **Timelines**                | `useHomeTimeline`, `usePublicTimeline`, `useHashtagTimeline`, `useStreamingTimeline`           |
-| **Posting & Media**          | `usePostStatus`, `useUploadMedia`, `useReplyStatus`                                            |
-| **Interactions**             | `useFavouriteStatus`, `useToggleFavourite`, `useReblogStatus`, `useBookmarkStatus`             |
-| **Notifications & Mentions** | `useNotifications`, `usePrivateMentions`                                                       |
-| **Trending Content**         | `useTrendingPosts`, `useTrendingTags`, `useTrendingLinks`                                      |
-| **Moderation & Filters**     | `useMutedUsers`, `useMutedWords`, `useMutedDomains`, `useMutedConversations`, `useMuteActions` |
+| Category                     | Hooks                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Authentication & Client**  | `useUserSession`, `useMastoClient`                                                                  |
+| **User Info & Relations**    | `useUserProfileInfo`, `useUserFollowers`, `useUserFollowing`, `useWhoToFollow`, `useUserPosts`      |
+| **Timelines**                | `useHomeTimeline`, `usePublicTimeline`, `useHashtagTimeline`, `useStreamingTimeline`                |
+| **Posting & Media**          | `usePostStatus`, `useUploadMedia`, `useReplyStatus`                                                 |
+| **Interactions**             | `useFavouriteStatus`, `useToggleFavourite`, `useReblogStatus`, `useBookmarkStatus`, `useFollowUser` |
+| **Search & Discovery**       | `useSearchOrUrl`, `useTrendingPosts`, `useTrendingTags`, `useTrendingLinks`, `useWhoToFollow`       |
+| **Notifications & Mentions** | `useNotifications`, `usePrivateMentions`                                                            |
+| **Moderation & Filters**     | `useMutedUsers`, `useMutedWords`, `useMutedDomains`, `useMutedConversations`, `useMuteActions`      |
 
 ## 🧰 Scripts
 
