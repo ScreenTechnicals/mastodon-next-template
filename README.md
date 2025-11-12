@@ -198,7 +198,3 @@ If you like this project:
 * ⭐ Star the repository
 * 🐦 Share it with your developer friends
 * 💬 Contribute new hooks or ideas
-
----
-
-Would you like me to tailor this README to fit your **organization (like NeoBase Labs / Dev Verse)** branding style — with logo, tagline, and contributor badge section?
